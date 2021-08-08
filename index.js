@@ -1,85 +1,46 @@
-const express = require("express");
-const cors = require('cors')
-const config = require('./src/config/config');
-const formData = require('express-form-data');
-//const dummyUserFn = require('./src/middlewares/dummyUserFn');
 
-let app = express();
-app.use('*', cors());
+const express=require('express');
+const serveStatic=require('serve-static');
 
 
-//Server Settings
-const PORT = 5000;
-const path = require("path");
-const bodyParser = require("body-parser");
-const bootstrap = require("./src/bootstrap");
-
-//https://github.com/ortexx/express-form-data#readme
+var hostname="localhost";
+var port=3001;
 
 
-//Parse data with connect-multiparty. 
-app.use(formData.parse({}));
-//Delete from the request all empty files (size == 0)
-app.use(formData.format());
-//Change the file objects to fs.ReadStream 
-app.use(formData.stream());
-//Union the body and the files
-app.use(formData.union());
-
-//Pug Template Engine
-app.set("view engine", "pug");
-app.set("views", path.resolve("./src/views"));
-
-//Request Parsing
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-//Not using the following because the client side will be using
-//formdata technique to send data. This is due to the web application
-//has file submission functionality.
-//app.use(express.json());
-//app.use(express.urlencoded({ extended: true }));
+var app=express();
 
 
-
-
-
-
-
-
-
-
-//Express Router
-const router = express.Router();  // Not inside the app
-app.use(router);  // Now it's inside the app
-const rootPath = path.resolve("./dist");   
-
-//All client side files are parked inside the dist directory.
-//The client side files are compiled by using Gulp
-//The actual code files which developers edit is at /src/assets
-app.use(express.static(rootPath));
-//Applied this middleware function to supply dummy user id for testing
-//when I have not prepared the login functionality.
-//router.use(dummyUserFn.useDummyUserForTesting); 
-bootstrap(app, router);
-
-//Index Page (Home public page)
-router.get('/', (req, res, next) => {
-    res.send('<html><title>Backend API system for experimenting security concept</title><body>This project provides only backend API support</body></html>');
-    res.end();
-});
-
-router.use((err, req, res, next) => {
-    if (err) {
-        //Handle file type and max size of image
-        return res.send(err.message);
+app.use(function(req,res,next){
+    console.log(req.url);
+    console.log(req.method);
+    console.log(req.path);
+    console.log(req.query.id);
+    //Checking the incoming request type from the client
+    if(req.method!="GET"){
+        res.type('.html');
+        var msg='<html><body>This server only serves web pages with GET request</body></html>';
+        res.end(msg);
+    }else{
+        next();
     }
 });
 
 
+app.use(serveStatic(__dirname+"/public"));
 
 
-
-app.listen(PORT, err => {
-    if (err) return console.log(`Cannot Listen on PORT: ${PORT}`);
-    console.log(`Server is Listening on: http://localhost:${PORT}/`);
+app.get("/", (req, res) => {
+    res.sendFile("/public/home.html", { root: __dirname });
 });
+
+
+app.listen(port,hostname,function(){
+
+    console.log(`Server hosted at http://${hostname}:${port}`);
+});
+
+
+
+
+
+
